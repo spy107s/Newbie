@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24-bit Graphics Agent - Game Asset Generator</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js and OrbitControls for Voxel Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon"></div>
+                <div class="logo-text">
+                    <h1>Antigravity Graphix</h1>
+                    <span>Agent Đồ Họa 24-Bit</span>
+                </div>
+            </div>
+            <div class="mode-selector">
+                <button id="btn-mode-2d" class="mode-btn active" onclick="switchMode('2d')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                    2D Pixel Art
+                </button>
+                <button id="btn-mode-3d" class="mode-btn" onclick="switchMode('3d')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    3D Voxel Model
+                </button>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span class="status-text">Agent Online</span>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- LEFT PANEL: AGENT CHAT -->
+            <aside class="sidebar-chat">
+                <div class="panel-header">
+                    <h3>🤖 Trò chuyện với Agent</h3>
+                    <button class="clear-chat-btn" onclick="clearChat()" title="Xóa lịch sử chat">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message system">
+                        <div class="avatar">🤖</div>
+                        <div class="msg-content">
+                            <p>Xin chào! Tôi là <strong>Agent Đồ Họa 24-bit</strong> của bạn. Tôi có thể giúp bạn vẽ các asset pixel game hoặc dựng mô hình voxel 3D bằng các thuật toán thông minh.</p>
+                            <p>Hãy thử gõ câu lệnh hoặc yêu cầu như:</p>
+                            <ul>
+                                <li><code>/gen sword</code> - Sinh kiếm (vũ khí)</li>
+                                <li><code>/gen shield</code> - Sinh khiên bảo vệ</li>
+                                <li><code>/gen potion</code> - Sinh bình nước ma thuật</li>
+                                <li><code>/gen character</code> - Sinh nhân vật đơn giản</li>
+                                <li><code>/gen axe</code> - Sinh rìu chiến</li>
+                                <li><code>/gen key</code> - Sinh chìa khóa</li>
+                                <li><code>/gen heart</code> - Sinh trái tim/máu</li>
+                                <li><code>/gen monster</code> - Sinh quái vật slime</li>
+                                <li><code>/gen coin</code> - Sinh đồng xu vàng</li>
+                                <li><code>/palette cyberpunk</code> - Đổi bảng màu</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Nhập yêu cầu hoặc câu lệnh..." onkeydown="handleChatSubmit(event)">
+                    <button id="send-btn" onclick="sendChatMessage()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- CENTER WORKSPACE: CANVAS/WEBGL VIEW -->
+            <main class="workspace-area">
+                <!-- 2D Canvas View -->
+                <div id="workspace-2d" class="editor-view active">
+                    <div class="canvas-toolbar">
+                        <div class="tool-group">
+                            <button id="tool-pencil" class="tool-btn active" title="Bút vẽ (P)" onclick="setTool('pencil')">✏️</button>
+                            <button id="tool-eraser" class="tool-btn" title="Cục tẩy (E)" onclick="setTool('eraser')">🧹</button>
+                            <button id="tool-bucket" class="tool-btn" title="Tô màu (G)" onclick="setTool('bucket')">🪣</button>
+                            <button id="tool-picker" class="tool-btn" title="Hút màu (I)" onclick="setTool('picker')">🧪</button>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="tool-group">
+                            <button class="tool-btn" title="Hoàn tác (Ctrl+Z)" onclick="undo2D()">↩️</button>
+                            <button class="tool-btn" title="Làm lại (Ctrl+Y)" onclick="redo2D()">↪️</button>
+                            <button class="tool-btn" title="Xóa màn hình" onclick="clearGrid2D()">🗑️</button>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="grid-size-selector">
+                            <label>Kích thước:</label>
+                            <select id="grid-size-select" onchange="changeGridSize2D(this.value)">
+                                <option value="16">16 x 16</option>
+                                <option value="32" selected>32 x 32</option>
+                                <option value="64">64 x 64</option>
+                            </select>
+                        </div>
+                        <div class="zoom-indicator">
+                            <span id="zoom-value">100%</span>
+                        </div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="pixel-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3D Voxel View -->
+                <div id="workspace-3d" class="editor-view">
+                    <div class="canvas-toolbar">
+                        <div class="tool-group">
+                            <button id="tool-voxel-add" class="tool-btn active" title="Đặt Voxel" onclick="setVoxelTool('add')">🧱 Đặt</button>
+                            <button id="tool-voxel-delete" class="tool-btn" title="Xóa Voxel" onclick="setVoxelTool('delete')">❌ Xóa</button>
+                            <button id="tool-voxel-paint" class="tool-btn" title="Tô Màu Voxel" onclick="setVoxelTool('paint')">🎨 Tô</button>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="tool-group">
+                            <button class="tool-btn" title="Xoay Camera về góc chuẩn" onclick="reset3DCamera()">📹 Reset</button>
+                            <button class="tool-btn" title="Xóa mô hình 3D" onclick="clear3DSpace()">🗑️ Xóa</button>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="grid-size-selector">
+                            <label>Lưới 3D:</label>
+                            <select id="voxel-size-select" onchange="changeVoxelSize3D(this.value)">
+                                <option value="8">8 x 8 x 8</option>
+                                <option value="16" selected>16 x 16 x 16</option>
+                                <option value="24">24 x 24 x 24</option>
+                            </select>
+                        </div>
+                        <div class="separator"></div>
+                        <button class="generate-from-2d-btn" onclick="project2Dto3D()" title="Chiếu hình ảnh 2D hiện tại thành Voxel 3D (Extrude)">
+                            ⚡ Extrude từ 2D
+                        </button>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <div id="three-container"></div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL: COLORS & EXPORT -->
+            <aside class="sidebar-tools">
+                <!-- Color Section -->
+                <div class="tool-section">
+                    <div class="section-title">🎨 Bảng màu 24-bit</div>
+                    <div class="color-picker-box">
+                        <div class="preview-color-row">
+                            <div id="color-preview" class="color-preview"></div>
+                            <input type="text" id="color-hex-input" class="hex-input" value="#ff4b4b" onchange="updateHexColor(this.value)">
+                        </div>
+                        <div class="rgb-sliders">
+                            <div class="slider-row">
+                                <span class="label r">R</span>
+                                <input type="range" id="slider-r" min="0" max="255" value="255" oninput="updateRGBColor()">
+                                <span id="val-r" class="slider-val">255</span>
+                            </div>
+                            <div class="slider-row">
+                                <span class="label g">G</span>
+                                <input type="range" id="slider-g" min="0" max="255" value="75" oninput="updateRGBColor()">
+                                <span id="val-g" class="slider-val">75</span>
+                            </div>
+                            <div class="slider-row">
+                                <span class="label b">B</span>
+                                <input type="range" id="slider-b" min="0" max="255" value="75" oninput="updateRGBColor()">
+                                <span id="val-b" class="slider-val">75</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preset-palettes-header">
+                        <h4>Bảng màu preset</h4>
+                    </div>
+                    <div class="preset-buttons">
+                        <button onclick="setPalette('cyberpunk')" class="preset-btn">Cyberpunk</button>
+                        <button onclick="setPalette('retro')" class="preset-btn">Classic Retro</button>
+                        <button onclick="setPalette('forest')" class="preset-btn">Forest RPG</button>
+                        <button onclick="setPalette('bubblegum')" class="preset-btn">Bubblegum</button>
+                        <button onclick="setPalette('monochrome')" class="preset-btn">Gameboy Gray</button>
+                    </div>
+                    <div id="palette-colors" class="palette-colors-grid">
+                        <!-- Màu cụ thể hiển thị tại đây -->
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="tool-section export-section">
+                    <div class="section-title">💾 Xuất File Asset</div>
+                    
+                    <!-- 2D Export Tools -->
+                    <div id="export-2d-group" class="export-group active">
+                        <h4>Tùy chọn 2D Pixel</h4>
+                        <div class="export-buttons">
+                            <button onclick="exportPNG(1)" class="export-btn primary">
+                                📤 Xuất Sprite (1x)
+                            </button>
+                            <button onclick="exportPNG(8)" class="export-btn">
+                                📤 Xuất phóng to (8x)
+                            </button>
+                            <button onclick="exportPNG(16)" class="export-btn">
+                                📤 Xuất phóng to (16x)
+                            </button>
+                            <button onclick="export2DData()" class="export-btn text-btn">
+                                📊 Xuất JSON Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3D Export Tools -->
+                    <div id="export-3d-group" class="export-group">
+                        <h4>Tùy chọn 3D Voxel</h4>
+                        <div class="export-buttons">
+                            <button onclick="exportOBJ()" class="export-btn primary">
+                                📦 Xuất Model (OBJ)
+                            </button>
+                            <button onclick="export3DData()" class="export-btn">
+                                📊 Xuất JSON Voxel Grid
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Models list -->
+                <div class="tool-section model-list-section">
+                    <div class="section-title">📂 Bản nháp đã tạo</div>
+                    <div class="drafts-list" id="drafts-list">
+                        <div class="empty-list-msg">Chưa có bản nháp nào được lưu. Hãy nhờ Agent sinh hoặc tự vẽ!</div>
+                    </div>
+                    <button class="save-draft-btn" onclick="saveCurrentToDrafts()">
+                        💾 Lưu Bản Nháp Hiện Tại
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="agent.js"></script>
+    <script src="editor2d.js"></script>
+    <script src="editor3d.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
